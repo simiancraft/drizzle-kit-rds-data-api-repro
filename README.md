@@ -35,7 +35,15 @@ Measured against `drizzle-orm@0.45.2`, `drizzle-kit@0.31.10`, `@aws-sdk/client-r
 error: exit status 1
 ```
 
-No error message, no stack trace, on a TTY or a pipe. The underlying exception is swallowed by the progress renderer, which is what makes this class of bug hard to report: the operator sees only a failed command.
+No error message, no stack trace, on a TTY or a pipe. The underlying exception is swallowed by the progress renderer, which is what makes this class of bug hard to report: every distinct cause below presents identically as a bare exit 1, so the operator has nothing to paste into an issue.
+
+**This is also fixed in `1.0.0-rc.4`**, which reports the failing query and a stack trace:
+
+```
+[✗] Error during introspection:
+Failed query: SELECT oid, spcname as "name" FROM pg_catalog.pg_tablespace ORDER BY ...
+    at async fromDatabase$3 (.../drizzle-kit/bin.cjs)
+```
 
 ### 2. The underlying causes, isolated
 
