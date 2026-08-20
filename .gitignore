@@ -1,0 +1,12 @@
+node_modules/
+dist/
+
+# Connection details are per-user and MUST NOT be committed: the cluster and
+# secret ARNs contain an AWS account id.
+.env
+.env.*
+!.env.example
+
+# Raw captured output before redaction. Only the redacted copies in
+# evidence/ are committed.
+*.raw.log

@@ -1,0 +1,23 @@
+{
+  "name": "drizzle-kit-rds-data-api-repro",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal reproduction of drizzle-kit introspection failures against Aurora Serverless v2 over the RDS Data API",
+  "license": "MIT",
+  "scripts": {
+    "seed": "bun scripts/apply-schema.ts",
+    "reset": "bun scripts/reset-database.ts",
+    "repro:pull": "drizzle-kit pull",
+    "repro:push": "drizzle-kit push",
+    "repro:studio": "drizzle-kit studio",
+    "evidence": "bun scripts/capture-evidence.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-rds-data": "3.928.0",
+    "drizzle-orm": "0.45.2"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.10"
+  }
+}
