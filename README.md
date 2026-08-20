@@ -62,6 +62,66 @@ B and D are the same queries as A and C with a single `::text` appended, so each
 
 Probe F is a separate root cause: the Data API accepts only named parameters, so `$N` placeholders forwarded unchanged are never bound.
 
+## Version matrix
+
+`main` holds the failing configuration; the [`rc`](../../tree/rc) branch holds the 1.0 release candidate.
+
+| drizzle-kit | drizzle-orm | `@aws-sdk/client-rds-data` | `drizzle-kit pull` |
+|-------------|-------------|----------------------------|--------------------|
+| 0.31.10 (latest stable) | 0.45.2 | 3.928.0 | **exit 1, no output** |
+| 0.31.10 (latest stable) | 0.45.2 | 3.1114.0 (latest) | **exit 1, no output** |
+| 1.0.0-rc.4 | 1.0.0-rc.4 | 3.928.0 | exit 0, correct |
+| 1.0.0-rc.4 | 1.0.0-rc.4 | 3.1114.0 (latest) | exit 0, correct |
+
+Because kit prints nothing on failure, the two failing rows cannot be told apart from the CLI; they are both simply "exit 1."
+
+### 1.0.0-rc.4 introspects correctly, not merely without crashing
+
+The schema is built so that three defects would corrupt the output silently rather than raise. The release candidate gets all three right:
+
+- **Composite primary key column order** is preserved: `regions_pkey` is emitted as `[regionCode, countryCode]`, matching `PRIMARY KEY (region_code, country_code)`, not reordered to table or alphabetical order.
+- **Multi-column foreign key pairing** is correct: `[homeRegion, homeCountry]` maps to `[regionCode, countryCode]`, and the referencing and referenced orders differ deliberately so a positional mis-pairing would show.
+- **Empty array default** is read as `.default([])`.
+
+So for anyone hitting #2982: **the 1.0 release candidate resolves it**, including the `@aws-sdk` pin that the older line forces.
+
+### One defect remains on 1.0.0-rc.4: studio's proxy does not bind parameters
+
+```bash
+bun x drizzle-kit studio --port 5599      # in one shell
+bun scripts/probe-studio-proxy.ts 5599    # in another
+```
+
+```
+### CONTROL: no parameters
+sql:    select count(*)::text as n from regions
+result: [{"n":"0"}]
+
+### TEST: one bound parameter
+sql:    select count(*)::text as n from regions where country_code = $1
+params: ["US"]
+result: {"status":"error","error":"ERROR: bind message supplies 0 parameters,
+         but prepared statement \"sqlx_s_35\" requires 1; SQLState: 08P01"}
+```
+
+The control isolates the failure to parameter binding: the same query without
+parameters succeeds over the same connection.
+
+**Root cause.** `drizzle-orm`'s `AwsPgDialect.escapeParam(num)` returns
+`` `:${num + 1}` `` (`aws-data-api/pg/driver.js`), so SQL the ORM *generates*
+already carries Data API named placeholders. Studio's client sends **raw** SQL
+using Postgres-standard `$N`, and drizzle-kit's `aws-data-api` proxy forwards it
+to `session.prepareQuery({ sql, params })` unchanged, so the Data API is asked to
+bind named parameters it never received.
+
+A fix belongs in drizzle-kit's `aws-data-api` `query` and `proxy` functions,
+translating `$N` to `:N` before `prepareQuery`. The translation must be literal
+aware, or it corrupts dollar signs inside string literals, E-strings,
+dollar-quoted bodies, line and block comments, quoted identifiers, and bare
+identifiers (Postgres permits `$` after an identifier's first character, so
+`foo$1` is one identifier, not `foo` followed by `$1`).
+
+
 ## Running it
 
 Requires an Aurora Serverless v2 cluster with the Data API enabled, and AWS credentials with `rds-data` permissions.
@@ -84,6 +144,7 @@ The catalog is created with raw DDL over the Data API rather than with drizzle-k
 src/schema.ts                     drizzle schema; every element trips a specific failure
 scripts/apply-schema.ts           creates the same catalog with plain DDL
 scripts/probe-data-api-types.ts   isolates each failure to one expression
+scripts/probe-studio-proxy.ts     studio proxy parameter binding, with a control
 scripts/data-api.ts               Data API client, config from env, ARN redaction helper
 drizzle.config.ts                 aws-data-api driver, credentials from env
 ```
