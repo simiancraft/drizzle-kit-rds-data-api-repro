@@ -7,11 +7,11 @@
   "license": "MIT",
   "scripts": {
     "seed": "bun scripts/apply-schema.ts",
-    "reset": "bun scripts/reset-database.ts",
+    "probe:types": "bun scripts/probe-data-api-types.ts",
+    "probe:studio": "bun scripts/probe-studio-proxy.ts",
     "repro:pull": "drizzle-kit pull",
     "repro:push": "drizzle-kit push",
-    "repro:studio": "drizzle-kit studio",
-    "evidence": "bun scripts/capture-evidence.ts"
+    "repro:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@aws-sdk/client-rds-data": "3.928.0",
