@@ -2,7 +2,14 @@
 
 Minimal reproduction of `drizzle-kit` introspection failures against **Aurora Serverless v2 (PostgreSQL) over the RDS Data API**.
 
-Related upstream issue: [drizzle-team/drizzle-orm#2982](https://github.com/drizzle-team/drizzle-orm/issues/2982).
+Upstream issues this repository was built for:
+
+| | |
+|---|---|
+| [#2982](https://github.com/drizzle-team/drizzle-orm/issues/2982) | the original report, **closed**: `1.0.0-rc.4` resolves it |
+| [#6147](https://github.com/drizzle-team/drizzle-orm/issues/6147) | the one defect that survives on `1.0.0-rc.4`, **open** |
+| [#6148](https://github.com/drizzle-team/drizzle-orm/pull/6148) | the fix for it, **open** |
+| [#2372](https://github.com/drizzle-team/drizzle-orm/issues/2372) | the same root cause reached through `push`, **open** |
 
 ## Scope, stated precisely
 
@@ -86,6 +93,8 @@ The schema is built so that three defects would corrupt the output silently rath
 So for anyone hitting #2982: **the 1.0 release candidate resolves it**, including the `@aws-sdk` pin that the older line forces.
 
 ### One defect remains on 1.0.0-rc.4: studio's proxy does not bind parameters
+
+Filed as [#6147](https://github.com/drizzle-team/drizzle-orm/issues/6147); [#6148](https://github.com/drizzle-team/drizzle-orm/pull/6148) fixes it, with before and after output from a live Aurora cluster on the PR.
 
 ```bash
 bun x drizzle-kit studio --port 5599      # in one shell
