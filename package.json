@@ -14,10 +14,10 @@
     "evidence": "bun scripts/capture-evidence.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-rds-data": "3.928.0",
-    "drizzle-orm": "0.45.2"
+    "@aws-sdk/client-rds-data": "3.1114.0",
+    "drizzle-orm": "1.0.0-rc.4"
   },
   "devDependencies": {
-    "drizzle-kit": "0.31.10"
+    "drizzle-kit": "1.0.0-rc.4"
   }
 }
