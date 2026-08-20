@@ -54,6 +54,29 @@ B and D are the same queries as A and C with a single `::text` appended, so each
 
 Probe F is a separate root cause: the Data API accepts only named parameters, so `$N` placeholders forwarded unchanged are never bound.
 
+## Version matrix
+
+`main` holds the failing configuration; the [`rc`](../../tree/rc) branch holds the 1.0 release candidate.
+
+| drizzle-kit | drizzle-orm | `@aws-sdk/client-rds-data` | `drizzle-kit pull` |
+|-------------|-------------|----------------------------|--------------------|
+| 0.31.10 (latest stable) | 0.45.2 | 3.928.0 | **exit 1, no output** |
+| 0.31.10 (latest stable) | 0.45.2 | 3.1114.0 (latest) | **exit 1, no output** |
+| 1.0.0-rc.4 | 1.0.0-rc.4 | 3.928.0 | exit 0, correct |
+| 1.0.0-rc.4 | 1.0.0-rc.4 | 3.1114.0 (latest) | exit 0, correct |
+
+Because kit prints nothing on failure, the two failing rows cannot be told apart from the CLI; they are both simply "exit 1."
+
+### 1.0.0-rc.4 introspects correctly, not merely without crashing
+
+The schema is built so that three defects would corrupt the output silently rather than raise. The release candidate gets all three right:
+
+- **Composite primary key column order** is preserved: `regions_pkey` is emitted as `[regionCode, countryCode]`, matching `PRIMARY KEY (region_code, country_code)`, not reordered to table or alphabetical order.
+- **Multi-column foreign key pairing** is correct: `[homeRegion, homeCountry]` maps to `[regionCode, countryCode]`, and the referencing and referenced orders differ deliberately so a positional mis-pairing would show.
+- **Empty array default** is read as `.default([])`.
+
+So for anyone hitting #2982: **the 1.0 release candidate resolves it**, including the `@aws-sdk` pin that the older line forces.
+
 ## Running it
 
 Requires an Aurora Serverless v2 cluster with the Data API enabled, and AWS credentials with `rds-data` permissions.
